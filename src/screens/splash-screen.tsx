@@ -18,6 +18,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MainStackParamList} from '../types/navigation-types';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import useNoteStore from '../store/notes-store';
+import {useSnackbarActions} from '../store/snack-bar-store';
 
 type Props = {};
 
@@ -31,6 +32,7 @@ const SplashScreen = (props: Props) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const {loadFromLocalStorage, persistToLocalStorage, notes} = useNoteStore();
   const isFocused = useIsFocused();
+  const {addSnack} = useSnackbarActions();
 
   AppState.addEventListener(
     'change',
@@ -57,11 +59,7 @@ const SplashScreen = (props: Props) => {
       setIsLoading(true);
       await Promise.all([loadFromLocalStorage(), asyncTimeout(2000)]);
     } catch (error) {
-      console.log(
-        'Error while retrieving items from the local storage',
-        null,
-        3,
-      );
+      addSnack({message: 'Could not load Notes!', severity: 'Error'});
     } finally {
       setIsLoading(false);
       navigation.navigate('MainTabNavigator');
@@ -72,10 +70,7 @@ const SplashScreen = (props: Props) => {
     try {
       persistToLocalStorage();
     } catch (error) {
-      console.log(
-        'Error while saving persisting the storage of data',
-        JSON.stringify(error, null, 3),
-      );
+      addSnack({message: 'Could not save notes locally!', severity: 'Error'});
     }
   }
 

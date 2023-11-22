@@ -25,6 +25,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {note_key} from '../constants/storage-keys';
 import NoteSavedModal from '../components/note-saved-modal';
 import useNoteStore from '../store/notes-store';
+import {useSnackbarActions} from '../store/snack-bar-store';
+import asyncTimeout from '../utils/asyncTimeout';
 
 type Props = {};
 
@@ -47,14 +49,8 @@ const NoteEditor = (props: Props) => {
   const [isClientPickerVisible, setIsClientPickerVisible] =
     useState<boolean>(false);
   const [notesHeight, setNotesHeight] = useState<number>(100);
-  const [isNoteSavedModalVisible, setIsNoteSavedModalVisible] =
-    useState<boolean>(false);
   const {addRemoveNote} = useNoteStore();
-
-  useEffect(() => {
-    if (!isNoteSavedModalVisible) return;
-    closeSavedModal();
-  }, [isNoteSavedModalVisible]);
+  const {addSnack} = useSnackbarActions();
 
   const Formik = useFormik({
     initialValues: {
@@ -66,22 +62,14 @@ const NoteEditor = (props: Props) => {
     },
   });
 
-  const closeSavedModal = () => {
-    setTimeout(() => {
-      setIsCategoryPickerVisible(false);
-      setTimeout(() => {
-        navigation.goBack();
-      }, 1000);
-    }, 1500);
-  };
-
   const createNote = async (note: string) => {
     try {
       setIsLoading(true);
       const clientInfo = clientList.filter(
         client => client.name === selectedClient,
       );
-      if (!clientInfo) return console.log('No Client Info');
+      if (!clientInfo)
+        return addSnack({message: 'Could not save Note!', severity: 'Error'});
       const toSaveNote: Note = {
         id: route.params.toCreateNoteId,
         client: clientInfo[0],
@@ -89,9 +77,11 @@ const NoteEditor = (props: Props) => {
         note: note,
       };
       addRemoveNote(toSaveNote);
-      setIsNoteSavedModalVisible(true);
+      addSnack({message: 'Note Added Successfully!', severity: 'Success'});
+      await asyncTimeout(1000);
+      navigation.goBack();
     } catch (error) {
-      console.log('Error while saving notes', JSON.stringify(error, null, 3));
+      addSnack({message: 'Could not save Note!', severity: 'Error'});
     } finally {
       setIsLoading(false);
     }
@@ -186,10 +176,6 @@ const NoteEditor = (props: Props) => {
           }
           setSelectedCatrgory(item as CategoryType);
         }}
-      />
-      <NoteSavedModal
-        isVisible={isNoteSavedModalVisible}
-        backDropPress={closeSavedModal}
       />
     </SafeAreaView>
   );

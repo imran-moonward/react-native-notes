@@ -19,6 +19,7 @@ import {useIsFocused, useNavigation} from '@react-navigation/native';
 import NoteContainer from '../components/note-container';
 import useNoteStore from '../store/notes-store';
 import asyncTimeout from '../utils/asyncTimeout';
+import {useSnackbarActions} from '../store/snack-bar-store';
 
 type Props = {};
 type NavigationProp = NativeStackNavigationProp<
@@ -30,6 +31,7 @@ const HomeScreen = (props: Props) => {
   const navigation = useNavigation<NavigationProp>();
   const {notes, loadFromLocalStorage} = useNoteStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const {addSnack} = useSnackbarActions();
 
   const onAddPress = () => {
     navigation.navigate('NoteEditor', {
@@ -42,11 +44,7 @@ const HomeScreen = (props: Props) => {
       setIsRefreshing(true);
       await Promise.all([loadFromLocalStorage(), asyncTimeout(2000)]);
     } catch (error) {
-      console.log(
-        'Error while retrieving items from the local storage',
-        null,
-        3,
-      );
+      addSnack({message: 'Could not load saved notes!', severity: 'Error'});
     } finally {
       setIsRefreshing(false);
     }
