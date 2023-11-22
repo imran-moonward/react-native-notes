@@ -4,15 +4,9 @@ import {
   AppStateStatus,
   SafeAreaView,
   StyleSheet,
-  Text,
-  View,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
-import LottieView from 'lottie-react-native';
 import {Colors} from '../constants/colors';
-import {CategoryType} from '../types/general-types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {category_key, client_key, note_key} from '../constants/storage-keys';
 import asyncTimeout from '../utils/asyncTimeout';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MainStackParamList} from '../types/navigation-types';

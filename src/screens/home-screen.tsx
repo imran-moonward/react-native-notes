@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Dimensions,
   FlatList,
@@ -15,7 +15,7 @@ import MessageContainer from '../components/message-container';
 import {Note} from '../types/general-types';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MainStackParamList} from '../types/navigation-types';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import NoteContainer from '../components/note-container';
 import useNoteStore from '../store/notes-store';
 import asyncTimeout from '../utils/asyncTimeout';
