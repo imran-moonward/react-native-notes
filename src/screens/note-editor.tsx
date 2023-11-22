@@ -24,6 +24,7 @@ import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {note_key} from '../constants/storage-keys';
 import NoteSavedModal from '../components/note-saved-modal';
+import useNoteStore from '../store/notes-store';
 
 type Props = {};
 
@@ -48,6 +49,7 @@ const NoteEditor = (props: Props) => {
   const [notesHeight, setNotesHeight] = useState<number>(100);
   const [isNoteSavedModalVisible, setIsNoteSavedModalVisible] =
     useState<boolean>(false);
+  const {addRemoveNote} = useNoteStore();
 
   useEffect(() => {
     if (!isNoteSavedModalVisible) return;
@@ -86,15 +88,7 @@ const NoteEditor = (props: Props) => {
         category: selectedCategory,
         note: note,
       };
-      let savedNotes = await AsyncStorage.getItem(note_key);
-      if (!savedNotes) {
-        await AsyncStorage.setItem(note_key, JSON.stringify([toSaveNote]));
-        setIsNoteSavedModalVisible(true);
-        return;
-      }
-      let parsedNotes: Note[] = JSON.parse(savedNotes);
-      parsedNotes = [...parsedNotes, toSaveNote];
-      await AsyncStorage.setItem(note_key, JSON.stringify(parsedNotes));
+      addRemoveNote(toSaveNote);
       setIsNoteSavedModalVisible(true);
     } catch (error) {
       console.log('Error while saving notes', JSON.stringify(error, null, 3));
