@@ -12,13 +12,11 @@ import {Colors} from '../constants/colors';
 
 type Props = {
   isVisible: boolean;
-  modalClick: () => void;
   backDropPress?: () => void;
 };
 
 const NoteSavedModal: React.FunctionComponent<Props> = ({
   isVisible,
-  modalClick,
   backDropPress,
 }) => {
   return (
@@ -29,9 +27,9 @@ const NoteSavedModal: React.FunctionComponent<Props> = ({
       propagateSwipe>
       <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
         <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.tickContainer} onPress={modalClick}>
+          <View style={styles.tickContainer}>
             <TickIcon height="55" width="55" color={Colors.MYNOTE_GREEN} />
-          </TouchableOpacity>
+          </View>
           <Text
             style={[{fontSize: 16, color: Colors.DARK, fontWeight: 'bold'}]}>
             Note Saved

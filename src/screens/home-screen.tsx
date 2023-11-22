@@ -1,26 +1,24 @@
+import React, {useEffect, useState} from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   FlatList,
   Platform,
+  RefreshControl,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Colors} from '../constants/colors';
 import MyNoteButtonBase from '../components/mynote-button-base';
 import AppHeader from '../components/app-header';
 import MessageContainer from '../components/message-container';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {note_key} from '../constants/storage-keys';
 import {Note} from '../types/general-types';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MainStackParamList} from '../types/navigation-types';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import NoteContainer from '../components/note-container';
 import useNoteStore from '../store/notes-store';
+import asyncTimeout from '../utils/asyncTimeout';
 
 type Props = {};
 type NavigationProp = NativeStackNavigationProp<
@@ -30,14 +28,29 @@ type NavigationProp = NativeStackNavigationProp<
 
 const HomeScreen = (props: Props) => {
   const navigation = useNavigation<NavigationProp>();
-  const {notes, addRemoveNote} = useNoteStore();
-  const isFocused = useIsFocused();
+  const {notes, loadFromLocalStorage} = useNoteStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const onAddPress = () => {
     navigation.navigate('NoteEditor', {
       toCreateNoteId: !notes ? 1 : notes.length + 1,
     });
   };
+
+  async function handleRefresh() {
+    try {
+      setIsRefreshing(true);
+      await Promise.all([loadFromLocalStorage(), asyncTimeout(2000)]);
+    } catch (error) {
+      console.log(
+        'Error while retrieving items from the local storage',
+        null,
+        3,
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.mainContainer}>
@@ -46,6 +59,12 @@ const HomeScreen = (props: Props) => {
         <FlatList
           numColumns={1}
           style={styles.listContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+            />
+          }
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
           data={notes}

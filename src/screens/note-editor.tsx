@@ -189,7 +189,6 @@ const NoteEditor = (props: Props) => {
       />
       <NoteSavedModal
         isVisible={isNoteSavedModalVisible}
-        modalClick={closeSavedModal}
         backDropPress={closeSavedModal}
       />
     </SafeAreaView>

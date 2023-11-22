@@ -1,6 +1,8 @@
 import {create} from 'zustand';
 import {CategoryType, Client, Note} from '../types/general-types';
 import {categoryList, clientList} from '../constants/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {note_key} from '../constants/storage-keys';
 
 type State = {
   notes: Note[];
@@ -15,6 +17,8 @@ type Action = {
   addCategory: (categoryType: CategoryType) => void;
   removeCategory: (categoryType: CategoryType) => void;
   updateNote: (note: Note) => void;
+  loadFromLocalStorage: () => void;
+  persistToLocalStorage: () => void;
 };
 
 type NoteStore = State & Action;
@@ -75,6 +79,23 @@ const useNoteStore = create<NoteStore>(set => ({
         return note;
       });
       return {notes: updatedNotes};
+    });
+  },
+  loadFromLocalStorage: async () => {
+    const storedData = await AsyncStorage.getItem(note_key);
+    if (storedData) {
+      const parsedData = JSON.parse(storedData);
+      return set(() => ({...parsedData}));
+    }
+    return {};
+  },
+
+  persistToLocalStorage() {
+    set(state => {
+      const {notes, categories, clientList} = state;
+      const dataToPersist = {notes, categories, clientList};
+      AsyncStorage.setItem(note_key, JSON.stringify(dataToPersist));
+      return {};
     });
   },
 }));
