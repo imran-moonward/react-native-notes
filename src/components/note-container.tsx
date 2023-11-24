@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import React from 'react';
 import {Note} from '../types/general-types';
 import Animated, {FadeInLeft, StretchInX} from 'react-native-reanimated';
@@ -7,13 +7,38 @@ import {Colors} from '../constants/colors';
 type Props = {
   note: Note;
   animationDelay: number;
+  onDeletePress: () => void;
+  onEditPress: () => void;
 };
 
-const NoteContainer = ({note, animationDelay}: Props) => {
+const NoteContainer = ({
+  note,
+  animationDelay,
+  onDeletePress,
+  onEditPress,
+}: Props) => {
   return (
     <Animated.View
       entering={FadeInLeft.duration(300).delay(animationDelay * 300)}
       style={styles.mainContainer}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.button, {borderColor: Colors.BASE_ORANGE}]}
+          onPress={onEditPress}>
+          <Text style={[styles.infoText, {color: Colors.BASE_ORANGE}]}>
+            Edit
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.button, {borderColor: Colors.ERROR_RED}]}
+          onPress={onDeletePress}>
+          <Text style={[styles.infoText, {color: Colors.ERROR_RED}]}>
+            Delete
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.rowContainer}>
         <Text style={styles.titleText}>Client: </Text>
         <Text style={styles.infoText}>{note.client.name}</Text>
@@ -22,7 +47,10 @@ const NoteContainer = ({note, animationDelay}: Props) => {
         <Text style={styles.titleText}>Category: </Text>
         <Text style={styles.infoText}>{note.category}</Text>
       </View>
-      <Text style={[styles.infoText, {marginTop: 8}]}>{note.note}</Text>
+      <View style={styles.rowContainer}>
+        <Text style={styles.titleText}>Note: </Text>
+        <Text style={[styles.infoText, {maxWidth: '80%'}]}>{note.note}</Text>
+      </View>
     </Animated.View>
   );
 };
@@ -30,6 +58,20 @@ const NoteContainer = ({note, animationDelay}: Props) => {
 export default NoteContainer;
 
 const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 4,
+  },
+
+  headerContainer: {
+    flexDirection: 'row',
+    columnGap: 8,
+    justifyContent: 'flex-end',
+  },
+
   infoText: {
     fontSize: 16,
     fontWeight: '300',
@@ -42,6 +84,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
+    paddingBottom: 24,
   },
   rowContainer: {
     flexDirection: 'row',

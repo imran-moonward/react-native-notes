@@ -29,13 +29,19 @@ type NavigationProp = NativeStackNavigationProp<
 
 const HomeScreen = (props: Props) => {
   const navigation = useNavigation<NavigationProp>();
-  const {notes, loadFromLocalStorage} = useNoteStore();
+  const {
+    notes,
+    loadFromLocalStorage,
+    addRemoveNote,
+    persistToLocalStorage,
+    setSelectedNote,
+  } = useNoteStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const {addSnack} = useSnackbarActions();
 
   const onAddPress = () => {
     navigation.navigate('NoteEditor', {
-      toCreateNoteId: !notes ? 1 : notes.length + 1,
+      noteId: !notes ? 1 : notes.length + 1,
     });
   };
 
@@ -47,6 +53,21 @@ const HomeScreen = (props: Props) => {
       addSnack({message: 'Could not load saved notes!', severity: 'Error'});
     } finally {
       setIsRefreshing(false);
+    }
+  }
+
+  function handleEditPress(note: Note) {
+    setSelectedNote(note);
+    navigation.navigate('NoteEditor', {noteId: note.id});
+  }
+
+  function handleDeletePress(note: Note) {
+    try {
+      addRemoveNote(note);
+      addSnack({message: 'Note Deleted Successfully!', severity: 'Success'});
+      persistToLocalStorage();
+    } catch {
+      addSnack({message: 'Something went wrong!', severity: 'Error'});
     }
   }
 
@@ -73,7 +94,13 @@ const HomeScreen = (props: Props) => {
           }
           keyExtractor={(item: Note, index: number) => index.toString()}
           renderItem={({item, index}) => (
-            <NoteContainer note={item} key={index} animationDelay={index + 1} />
+            <NoteContainer
+              note={item}
+              key={index}
+              animationDelay={index + 1}
+              onDeletePress={() => handleDeletePress(item)}
+              onEditPress={() => handleEditPress(item)}
+            />
           )}
         />
         <MyNoteButtonBase

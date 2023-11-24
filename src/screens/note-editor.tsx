@@ -21,29 +21,26 @@ import {categoryList, clientList} from '../constants/constants';
 import WheelPickerModal from '../components/WheelPickerModal';
 import ItemPicker from '../components/item-picker';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {note_key} from '../constants/storage-keys';
-import NoteSavedModal from '../components/note-saved-modal';
 import useNoteStore from '../store/notes-store';
 import {useSnackbarActions} from '../store/snack-bar-store';
 import asyncTimeout from '../utils/asyncTimeout';
-
-type Props = {};
 
 type NavigationProp = NativeStackNavigationProp<
   MainStackParamList,
   'NoteEditor'
 >;
 
-const NoteEditor = (props: Props) => {
+const NoteEditor = () => {
+  const {updateNote, selectedNote, persistToLocalStorage} = useNoteStore();
   const route = useRoute<RouteProp<MainStackParamList, 'NoteEditor'>>();
   const navigation = useNavigation<NavigationProp>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<string>(
-    clientList[0].name,
+    selectedNote ? selectedNote.client.name : clientList[0].name,
   );
-  const [selectedCategory, setSelectedCatrgory] =
-    useState<CategoryType>('Goal Evidence');
+  const [selectedCategory, setSelectedCatrgory] = useState<CategoryType>(
+    selectedNote ? selectedNote.category : 'Goal Evidence',
+  );
   const [isCategoryPickerVisible, setIsCategoryPickerVisible] =
     useState<boolean>(false);
   const [isClientPickerVisible, setIsClientPickerVisible] =
@@ -54,11 +51,11 @@ const NoteEditor = (props: Props) => {
 
   const Formik = useFormik({
     initialValues: {
-      note: '',
+      note: selectedNote ? selectedNote.note : '',
     },
     validationSchema: noteValidationSchema,
     onSubmit: async value => {
-      createNote(value.note);
+      selectedNote ? updateNoteData(value.note) : createNote(value.note);
     },
   });
 
@@ -71,17 +68,44 @@ const NoteEditor = (props: Props) => {
       if (!clientInfo)
         return addSnack({message: 'Could not save Note!', severity: 'Error'});
       const toSaveNote: Note = {
-        id: route.params.toCreateNoteId,
+        id: route.params.noteId,
         client: clientInfo[0],
         category: selectedCategory,
         note: note,
       };
       addRemoveNote(toSaveNote);
       addSnack({message: 'Note Added Successfully!', severity: 'Success'});
+      persistToLocalStorage();
       await asyncTimeout(1000);
       navigation.goBack();
     } catch (error) {
       addSnack({message: 'Could not save Note!', severity: 'Error'});
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateNoteData = async (note: string) => {
+    try {
+      setIsLoading(true);
+      const clientInfo = clientList.filter(
+        client => client.name === selectedClient,
+      );
+      if (!clientInfo)
+        return addSnack({message: 'Could not save Note!', severity: 'Error'});
+      const toupdateNote: Note = {
+        id: route.params.noteId,
+        client: clientInfo[0],
+        category: selectedCategory,
+        note: note,
+      };
+      updateNote(toupdateNote);
+      addSnack({message: 'Note Updated Successfully!', severity: 'Success'});
+      persistToLocalStorage();
+      await asyncTimeout(1000);
+      navigation.goBack();
+    } catch (error) {
+      addSnack({message: 'Could not update Note!', severity: 'Error'});
     } finally {
       setIsLoading(false);
     }

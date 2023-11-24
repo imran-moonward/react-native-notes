@@ -8,6 +8,7 @@ type State = {
   notes: Note[];
   categories: CategoryType[];
   clientList: Client[];
+  selectedNote: Note | undefined;
 };
 
 type Action = {
@@ -19,6 +20,7 @@ type Action = {
   updateNote: (note: Note) => void;
   loadFromLocalStorage: () => void;
   persistToLocalStorage: () => void;
+  setSelectedNote: (note: Note) => void;
 };
 
 type NoteStore = State & Action;
@@ -27,6 +29,7 @@ const useNoteStore = create<NoteStore>(set => ({
   notes: [],
   clientList: clientList,
   categories: categoryList,
+  selectedNote: undefined,
   addRemoveNote(note) {
     set(state => {
       const {notes} = state;
@@ -89,7 +92,7 @@ const useNoteStore = create<NoteStore>(set => ({
     }
     return {};
   },
-
+  setSelectedNote: note => set(() => ({selectedNote: note})),
   persistToLocalStorage() {
     set(state => {
       const {notes, categories, clientList} = state;
