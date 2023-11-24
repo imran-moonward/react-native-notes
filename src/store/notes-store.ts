@@ -20,7 +20,7 @@ type Action = {
   updateNote: (note: Note) => void;
   loadFromLocalStorage: () => void;
   persistToLocalStorage: () => void;
-  setSelectedNote: (note: Note) => void;
+  setSelectedNote: (note: Note | undefined) => void;
 };
 
 type NoteStore = State & Action;

@@ -31,7 +31,8 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 const NoteEditor = () => {
-  const {updateNote, selectedNote, persistToLocalStorage} = useNoteStore();
+  const {updateNote, selectedNote, persistToLocalStorage, setSelectedNote} =
+    useNoteStore();
   const route = useRoute<RouteProp<MainStackParamList, 'NoteEditor'>>();
   const navigation = useNavigation<NavigationProp>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -103,6 +104,7 @@ const NoteEditor = () => {
       addSnack({message: 'Note Updated Successfully!', severity: 'Success'});
       persistToLocalStorage();
       await asyncTimeout(1000);
+      setSelectedNote(undefined);
       navigation.goBack();
     } catch (error) {
       addSnack({message: 'Could not update Note!', severity: 'Error'});
