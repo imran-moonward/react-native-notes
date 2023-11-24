@@ -21,57 +21,43 @@ import {categoryList, clientList} from '../constants/constants';
 import WheelPickerModal from '../components/WheelPickerModal';
 import ItemPicker from '../components/item-picker';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {note_key} from '../constants/storage-keys';
-import NoteSavedModal from '../components/note-saved-modal';
-
-type Props = {};
+import useNoteStore from '../store/notes-store';
+import {useSnackbarActions} from '../store/snack-bar-store';
+import asyncTimeout from '../utils/asyncTimeout';
 
 type NavigationProp = NativeStackNavigationProp<
   MainStackParamList,
   'NoteEditor'
 >;
 
-const NoteEditor = (props: Props) => {
+const NoteEditor = () => {
+  const {updateNote, selectedNote, persistToLocalStorage} = useNoteStore();
   const route = useRoute<RouteProp<MainStackParamList, 'NoteEditor'>>();
   const navigation = useNavigation<NavigationProp>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<string>(
-    clientList[0].name,
+    selectedNote ? selectedNote.client.name : clientList[0].name,
   );
-  const [selectedCategory, setSelectedCatrgory] =
-    useState<CategoryType>('Goal Evidence');
+  const [selectedCategory, setSelectedCatrgory] = useState<CategoryType>(
+    selectedNote ? selectedNote.category : 'Goal Evidence',
+  );
   const [isCategoryPickerVisible, setIsCategoryPickerVisible] =
     useState<boolean>(false);
   const [isClientPickerVisible, setIsClientPickerVisible] =
     useState<boolean>(false);
   const [notesHeight, setNotesHeight] = useState<number>(100);
-  const [isNoteSavedModalVisible, setIsNoteSavedModalVisible] =
-    useState<boolean>(false);
-
-  useEffect(() => {
-    if (!isNoteSavedModalVisible) return;
-    closeSavedModal();
-  }, [isNoteSavedModalVisible]);
+  const {addRemoveNote} = useNoteStore();
+  const {addSnack} = useSnackbarActions();
 
   const Formik = useFormik({
     initialValues: {
-      note: '',
+      note: selectedNote ? selectedNote.note : '',
     },
     validationSchema: noteValidationSchema,
     onSubmit: async value => {
-      createNote(value.note);
+      selectedNote ? updateNoteData(value.note) : createNote(value.note);
     },
   });
-
-  const closeSavedModal = () => {
-    setTimeout(() => {
-      setIsCategoryPickerVisible(false);
-      setTimeout(() => {
-        navigation.goBack();
-      }, 1000);
-    }, 1500);
-  };
 
   const createNote = async (note: string) => {
     try {
@@ -79,25 +65,47 @@ const NoteEditor = (props: Props) => {
       const clientInfo = clientList.filter(
         client => client.name === selectedClient,
       );
-      if (!clientInfo) return console.log('No Client Info');
+      if (!clientInfo)
+        return addSnack({message: 'Could not save Note!', severity: 'Error'});
       const toSaveNote: Note = {
-        id: route.params.toCreateNoteId,
+        id: route.params.noteId,
         client: clientInfo[0],
         category: selectedCategory,
         note: note,
       };
-      let savedNotes = await AsyncStorage.getItem(note_key);
-      if (!savedNotes) {
-        await AsyncStorage.setItem(note_key, JSON.stringify([toSaveNote]));
-        setIsNoteSavedModalVisible(true);
-        return;
-      }
-      let parsedNotes: Note[] = JSON.parse(savedNotes);
-      parsedNotes = [...parsedNotes, toSaveNote];
-      await AsyncStorage.setItem(note_key, JSON.stringify(parsedNotes));
-      setIsNoteSavedModalVisible(true);
+      addRemoveNote(toSaveNote);
+      addSnack({message: 'Note Added Successfully!', severity: 'Success'});
+      persistToLocalStorage();
+      await asyncTimeout(1000);
+      navigation.goBack();
     } catch (error) {
-      console.log('Error while saving notes', JSON.stringify(error, null, 3));
+      addSnack({message: 'Could not save Note!', severity: 'Error'});
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateNoteData = async (note: string) => {
+    try {
+      setIsLoading(true);
+      const clientInfo = clientList.filter(
+        client => client.name === selectedClient,
+      );
+      if (!clientInfo)
+        return addSnack({message: 'Could not save Note!', severity: 'Error'});
+      const toupdateNote: Note = {
+        id: route.params.noteId,
+        client: clientInfo[0],
+        category: selectedCategory,
+        note: note,
+      };
+      updateNote(toupdateNote);
+      addSnack({message: 'Note Updated Successfully!', severity: 'Success'});
+      persistToLocalStorage();
+      await asyncTimeout(1000);
+      navigation.goBack();
+    } catch (error) {
+      addSnack({message: 'Could not update Note!', severity: 'Error'});
     } finally {
       setIsLoading(false);
     }
@@ -192,11 +200,6 @@ const NoteEditor = (props: Props) => {
           }
           setSelectedCatrgory(item as CategoryType);
         }}
-      />
-      <NoteSavedModal
-        isVisible={isNoteSavedModalVisible}
-        modalClick={closeSavedModal}
-        backDropPress={closeSavedModal}
       />
     </SafeAreaView>
   );

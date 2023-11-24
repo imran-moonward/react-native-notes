@@ -10,4 +10,6 @@ export const Colors = {
   LIGHT_TEXT: '#39393999',
   MAIN_ORANGE: '#F94914',
   BASE_ORANGE: '#F4AE49',
+  SUCCESS_GREEN: '#74AD76',
+  ERROR_RED: '#D86060',
 };

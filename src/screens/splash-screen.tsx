@@ -1,20 +1,18 @@
 import {
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
   SafeAreaView,
   StyleSheet,
-  Text,
-  View,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
-import LottieView from 'lottie-react-native';
 import {Colors} from '../constants/colors';
-import {CategoryType} from '../types/general-types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {category_key, client_key, note_key} from '../constants/storage-keys';
 import asyncTimeout from '../utils/asyncTimeout';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MainStackParamList} from '../types/navigation-types';
-import {useNavigation} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import useNoteStore from '../store/notes-store';
+import {useSnackbarActions} from '../store/snack-bar-store';
 
 type Props = {};
 
@@ -24,29 +22,52 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 const SplashScreen = (props: Props) => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigation = useNavigation<NavigationProp>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const {loadFromLocalStorage, persistToLocalStorage, notes} = useNoteStore();
+  const isFocused = useIsFocused();
+  const {addSnack} = useSnackbarActions();
+
+  AppState.addEventListener(
+    'change',
+    async (state: AppStateStatus) => await alertState(state),
+  );
 
   useEffect(() => {
-    getAppData();
+    if (!isFocused) return;
+    getItemsFromLocalStorage();
   }, []);
 
-  const getAppData = async () => {
-    try {
-      const values = await Promise.all([
-        AsyncStorage.getItem(note_key),
-        asyncTimeout(2000),
-      ]);
-      const [savedNotes] = values;
-      if (!savedNotes) {
-        console.log('No Notes Saved');
-      }
-      navigation.navigate('MainTabNavigator');
-    } catch (error) {
-    } finally {
-      setIsLoading(false);
+  const alertState = async (state: AppStateStatus) => {
+    switch (state) {
+      case 'inactive':
+        saveToLocalStorage();
+        break;
+      default:
+        break;
     }
   };
+
+  async function getItemsFromLocalStorage() {
+    try {
+      setIsLoading(true);
+      await Promise.all([loadFromLocalStorage(), asyncTimeout(2000)]);
+    } catch (error) {
+      addSnack({message: 'Could not load Notes!', severity: 'Error'});
+    } finally {
+      setIsLoading(false);
+      navigation.navigate('MainTabNavigator');
+    }
+  }
+
+  function saveToLocalStorage() {
+    try {
+      persistToLocalStorage();
+    } catch (error) {
+      addSnack({message: 'Could not save notes locally!', severity: 'Error'});
+    }
+  }
+
   return (
     <SafeAreaView style={styles.mainContainer}>
       {isLoading && (
